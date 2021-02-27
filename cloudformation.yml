@@ -1,0 +1,83 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Test vpn Template
+
+Resources:
+  #Create VPC
+  vpc1:
+    Type: 'AWS::EC2::VPC'
+    Properties: 
+      CidrBlock: '192.168.0.0/16'
+      Tags:
+        - Key: 'Name'
+          Value: 'vpc1'
+  # Create subnet1
+  subnet1:
+    Type: AWS::EC2::Subnet
+    Properties: 
+      AvailabilityZone: 'ap-northeast-1a'
+      VpcId: !Ref vpc1
+      CidrBlock: '192.168.1.0/24'
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: 'Name'
+          Value: 'subnet1'
+  # Create subnet2
+  subnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: 'ap-northeast-1c'
+      VpcId: !Ref vpc1
+      CidrBlock: '192.168.2.0/24'
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: 'Name'
+          Value: 'subnet2'          
+  # Create route table 
+  vpc1RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref vpc1
+      Tags:
+        - Key: 'Name'
+          Value: 'vpc1-rt'
+  # attachment subnet1
+  vpc1SubnetRouteTableAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref subnet1
+      RouteTableId: !Ref vpc1RouteTable  
+  # Create SimpleAD
+  testAD:
+    Type: AWS::DirectoryService::SimpleAD
+    Properties: 
+      # CreateAlias: Boolean
+      # Description: String
+      # EnableSso: Boolean
+      Name: 'test.com'
+      Password: 'Basketcase1'
+      # ShortName: String
+      Size: 'Small'
+      VpcSettings: 
+        SubnetIds: 
+          - !Ref subnet1
+          - !Ref subnet2          
+        VpcId: !Ref vpc1
+  # Create Workspaces
+  testWorkspaces:
+    Type: AWS::WorkSpaces::Workspace
+    Properties: 
+      BundleId: 'wsb-8vbljg4r6'
+      DirectoryId: !Ref testAD
+      RootVolumeEncryptionEnabled: false
+      Tags:
+        - Key: 'Name'
+          Value: 'test-workspaces'
+      UserName: 'Administrator'
+      UserVolumeEncryptionEnabled: false
+      # VolumeEncryptionKey: String
+      # WorkspaceProperties: 
+      #   ComputeTypeName: String
+      #   RootVolumeSizeGib: Integer
+      #   RunningMode: String
+      #   RunningModeAutoStopTimeoutInMinutes: Integer
+      #   UserVolumeSizeGib: Integer
